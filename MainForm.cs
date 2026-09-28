@@ -57,10 +57,21 @@ internal sealed class MainForm : Form
     private string _trayProjectsSignature = "";
     private readonly ToolStripMenuItem _trayMotionMenu = new("Movimento imediato ao ativar");
     private readonly ToolStripMenuItem _trayMotionModeMenu = new("Ativar movimento automático");
+    private readonly ToolStripMenuItem _trayPreviewMenu = new("Visualizar bonequinho");
     private readonly System.Windows.Forms.Timer _timer = new() { Interval = 15_000 };
     private readonly Dictionary<Guid, StickerForm> _stickers = [];
     private readonly Dictionary<Guid, NoteStickerForm> _noteStickers = [];
     private AssistantForm? _assistant;
+    private bool _assistantPreview;
+    private readonly WorkItem _previewItem = new()
+    {
+        Title = "Exemplo de lembrete",
+        Project = "PRÉVIA",
+        StartAt = DateTime.Now.AddMinutes(-1),
+        DueAt = DateTime.Now.AddHours(1),
+        Checklist = [new ChecklistItem { Text = "Planejar", Done = true },
+            new ChecklistItem { Text = "Concluir" }]
+    };
     private NeonButton? _folderButton;
     private WorkItem? _selected;
     private StickyNote? _selectedNote;
@@ -135,6 +146,8 @@ internal sealed class MainForm : Form
         };
         _tray.ContextMenuStrip.Items.Add("Abrir assistente", null, (_, _) => BringBack());
         _tray.ContextMenuStrip.Items.Add("Mostrar bonequinho", null, (_, _) => ShowAssistantFromTray());
+        _trayPreviewMenu.Click += (_, _) => ToggleAssistantPreview();
+        _tray.ContextMenuStrip.Items.Add(_trayPreviewMenu);
         for (var index = 0; index < AssistantForm.MascotSizeLabels.Length; index++)
         {
             var size = index;
@@ -1165,6 +1178,9 @@ internal sealed class MainForm : Form
     private void UpdateAssistant()
     {
         var active = _store.Items.Where(item => item.IsOngoing(DateTime.Now)).ToList();
+        if (active.Count > 0) _assistantPreview = false;
+        var showingPreview = _assistantPreview && active.Count == 0;
+        _trayPreviewMenu.Checked = showingPreview;
         var projectNames = active.Select(item => string.IsNullOrWhiteSpace(item.Project) ? "Geral" : item.Project.Trim())
             .Distinct(StringComparer.CurrentCultureIgnoreCase)
             .OrderBy(name => name, StringComparer.CurrentCultureIgnoreCase).ToList();
@@ -1173,7 +1189,7 @@ internal sealed class MainForm : Form
         var visibleCount = selected.Count == 0 ? active.Count : active.Count(item =>
             selected.Contains(string.IsNullOrWhiteSpace(item.Project) ? "Geral" : item.Project.Trim(),
                 StringComparer.CurrentCultureIgnoreCase));
-        if (!_store.Settings.AssistantEnabled || _store.Settings.AssistantHidden || visibleCount == 0)
+        if (!showingPreview && (!_store.Settings.AssistantEnabled || _store.Settings.AssistantHidden || visibleCount == 0))
         {
             _assistant?.Hide();
             return;
@@ -1181,10 +1197,19 @@ internal sealed class MainForm : Form
         if (_assistant is null || _assistant.IsDisposed)
         {
             _assistant = new AssistantForm(_store.Settings);
-            _assistant.TaskClicked += OpenTaskSticker;
-            _assistant.HideRequested += () => _assistantToggle.Checked = false;
+            _assistant.TaskClicked += item =>
+            {
+                if (_assistantPreview && item.Id == _previewItem.Id) { BringBack(); AddNew(); }
+                else OpenTaskSticker(item);
+            };
+            _assistant.HideRequested += () =>
+            {
+                if (_assistantPreview) ToggleAssistantPreview();
+                else _assistantToggle.Checked = false;
+            };
             _assistant.TemporarilyHideRequested += () =>
             {
+                if (_assistantPreview) { ToggleAssistantPreview(); return; }
                 _store.Settings.AssistantHidden = true;
                 _store.SaveSettings();
                 UpdateAssistant();
@@ -1209,7 +1234,8 @@ internal sealed class MainForm : Form
             _store.Settings.AssistantAutoMotionMinSeconds,
             _store.Settings.AssistantAutoMotionMaxSeconds);
         _assistant.SetAutomaticMotionEnabled(_store.Settings.AssistantAutoMotionEnabled);
-        _assistant.SetTasks(active, selected);
+        _assistant.SetTasks(showingPreview ? [_previewItem] : active,
+            showingPreview ? [] : selected);
         if (!_assistant.Visible) _assistant.Show();
     }
 
@@ -1353,6 +1379,11 @@ internal sealed class MainForm : Form
 
     private void ShowAssistantFromTray()
     {
+        if (!_store.Items.Any(item => item.IsOngoing(DateTime.Now)))
+        {
+            StartAssistantPreview();
+            return;
+        }
         _store.Settings.AssistantEnabled = true;
         _store.Settings.AssistantHidden = false;
         _assistantToggle.Checked = true;
@@ -1362,6 +1393,7 @@ internal sealed class MainForm : Form
 
     private void ToggleAssistantVisibility()
     {
+        if (_assistantPreview) { ToggleAssistantPreview(); return; }
         if (_assistant?.Visible == true)
         {
             _store.Settings.AssistantHidden = true;
@@ -1369,6 +1401,26 @@ internal sealed class MainForm : Form
             UpdateAssistant();
         }
         else ShowAssistantFromTray();
+    }
+
+    private void ToggleAssistantPreview()
+    {
+        if (!_assistantPreview) { StartAssistantPreview(); return; }
+        _assistantPreview = false;
+        UpdateAssistant();
+    }
+
+    private void StartAssistantPreview()
+    {
+        if (_store.Items.Any(item => item.IsOngoing(DateTime.Now)))
+        {
+            ShowAssistantFromTray();
+            return;
+        }
+        _previewItem.StartAt = DateTime.Now.AddMinutes(-1);
+        _previewItem.DueAt = DateTime.Now.AddHours(1);
+        _assistantPreview = true;
+        UpdateAssistant();
     }
 
     private void OpenTaskSticker(WorkItem item)

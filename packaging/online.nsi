@@ -15,11 +15,11 @@ Icon "..\assets\huginn-muninn.ico"
 !define MUI_FINISHPAGE_RUN_NOTCHECKED
 !insertmacro MUI_PAGE_FINISH
 !insertmacro MUI_LANGUAGE "PortugueseBR"
-VIProductVersion "0.1.1.0"
+VIProductVersion "0.1.2.0"
 VIAddVersionKey /LANG=1046 "ProductName" "Firaw Work Assistant"
 VIAddVersionKey /LANG=1046 "CompanyName" "Firawynix"
 VIAddVersionKey /LANG=1046 "FileDescription" "Instalador online Firaw Work Assistant"
-VIAddVersionKey /LANG=1046 "FileVersion" "0.1.1"
+VIAddVersionKey /LANG=1046 "FileVersion" "0.1.2"
 Section "Instalar" Core
   SectionIn RO
   InitPluginsDir

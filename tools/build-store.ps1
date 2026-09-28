@@ -1,14 +1,15 @@
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
+$version = '0.1.2'
 $sdk = Get-ChildItem 'C:\Program Files (x86)\Windows Kits\10\bin' -Filter makeappx.exe -Recurse -File |
     Where-Object FullName -Match '\\x64\\' | Sort-Object FullName -Descending |
     Select-Object -First 1 -ExpandProperty FullName
 if (-not $sdk) { throw 'MakeAppx não encontrado.' }
 Add-Type -AssemblyName System.Drawing
-$bundleDir = Join-Path $root 'release\store-packages'
+$bundleDir = Join-Path $root "release\store-packages-$version"
 New-Item -ItemType Directory -Force -Path $bundleDir | Out-Null
 foreach ($arch in @('x64','x86')) {
-    $stage = Join-Path $root "release\store-stage-$arch"
+    $stage = Join-Path $root "release\store-stage-$version-$arch"
     $app = Join-Path $stage 'app'
     $assets = Join-Path $stage 'Assets'
     New-Item -ItemType Directory -Force -Path $app,$assets | Out-Null
@@ -30,7 +31,7 @@ foreach ($arch in @('x64','x86')) {
     $manifest = @"
 <?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10" xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities" IgnorableNamespaces="uap uap10 rescap">
-  <Identity Name="Firawynix.FirawWorkAssistant" Publisher="CN=1FDE3668-C222-4506-AFE6-E2E425EAECD8" Version="0.1.0.0" ProcessorArchitecture="$arch" />
+  <Identity Name="Firawynix.FirawWorkAssistant" Publisher="CN=1FDE3668-C222-4506-AFE6-E2E425EAECD8" Version="$version.0" ProcessorArchitecture="$arch" />
   <Properties>
     <DisplayName>Firaw Work Assistant</DisplayName>
     <PublisherDisplayName>Firawynix</PublisherDisplayName>
@@ -48,8 +49,8 @@ foreach ($arch in @('x64','x86')) {
 </Package>
 "@
     [IO.File]::WriteAllText((Join-Path $stage 'AppxManifest.xml'),$manifest,[Text.UTF8Encoding]::new($false))
-    & $sdk pack /o /d $stage /p (Join-Path $bundleDir "Firaw-Work-Assistant-0.1.0-$arch.msix")
+    & $sdk pack /o /d $stage /p (Join-Path $bundleDir "Firaw-Work-Assistant-$version-$arch.msix")
     if ($LASTEXITCODE -ne 0) { throw "Falha no MSIX $arch." }
 }
-& $sdk bundle /o /bv 0.1.0.0 /d $bundleDir /p (Join-Path $root 'release\Firaw-Work-Assistant-0.1.0.msixbundle')
+& $sdk bundle /o /bv "$version.0" /d $bundleDir /p (Join-Path $root "release\Firaw-Work-Assistant-$version.msixbundle")
 if ($LASTEXITCODE -ne 0) { throw 'Falha no bundle Store.' }

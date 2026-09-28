@@ -17,7 +17,7 @@ Aplicativo Windows para lembretes, checklists e avisos sobre a tela. A identidad
 - Repetição diária ou semanal; ao concluir, o próximo aviso é agendado e a checklist é reiniciada.
 - Ícone na bandeja; fechar a janela principal mantém os avisos ativos.
 - Ícone de Huginn e Muninn em ciano com corvos maiores e versões próprias para tamanhos pequenos da barra de tarefas e da bandeja.
-- O bonequinho tem cinco tamanhos: **Compacto**, **Pequeno**, **Médio**, **Grande** e **Extra grande**, escolhidos no seu menu ou no ícone ao lado do relógio. O clique na rodinha sobre ele oculta; o mesmo clique no ícone da bandeja restaura quando houver tarefas pendentes.
+- O bonequinho tem cinco tamanhos: **Compacto**, **Pequeno**, **Médio**, **Grande** e **Extra grande**, escolhidos no seu menu ou no ícone ao lado do relógio. O clique na rodinha sobre ele oculta; o mesmo clique no ícone da bandeja restaura quando houver tarefas pendentes. Sem tarefas ativas, use **Visualizar bonequinho** na bandeja para abrir uma prévia que não altera seus lembretes.
 - Os cartões dos projetos acima do bonequinho têm os mesmos cinco tamanhos em **Tamanho dos projetos**. Essa escolha é independente do tamanho do bonequinho e fica salva para as próximas aberturas.
 - A janela do assistente só recebe cliques nos cartões e na silhueta visível do bonequinho; as áreas vazias deixam o clique passar para os outros aplicativos.
 - **Ctrl esquerdo + clique** no bonequinho ativa o movimento automático; repita o gesto para desativar e parar imediatamente. O menu do bonequinho e o da bandeja também mostram o estado e permitem alterná-lo. Ao ativar, pode ocorrer um movimento inicial de 1, 3 ou 5 segundos, ou nenhum, conforme **Movimento imediato ao ativar**.
@@ -29,7 +29,7 @@ Aplicativo Windows para lembretes, checklists e avisos sobre a tela. A identidad
 
 1. Clique em **Nova tarefa** para definir início, prazo e etapas da checklist. Digite o nome do projeto ou ambiente livremente; vincule uma pasta apenas se quiser. Se o prazo mudar, escolha **Postergado** ou **Reduzido** e informe a nova data final. Marque **Fixar sticker na tela** para acompanhar a tarefa sobre as demais janelas.
 2. Clique em **Nova anotação** para criar um texto livre. Edite no painel ou diretamente no sticker. A barra superior permite mover, trocar a cor, mudar a transparência e ocultar.
-3. O assistente animado aparece enquanto houver tarefas já iniciadas e ainda não concluídas. Clique numa tarefa da lista para abrir sua checklist; arraste o bonequinho para mover a janela.
+3. O assistente animado aparece enquanto houver tarefas já iniciadas e ainda não concluídas. Clique numa tarefa da lista para abrir sua checklist; arraste o bonequinho para mover a janela. Para conferir o visual sem tarefa ativa, clique com o botão direito no ícone ao lado do relógio e escolha **Visualizar bonequinho**.
 4. Fechar a janela principal mantém o aplicativo na bandeja. Use **Sair** no menu do ícone para encerrar completamente.
 
 ## Executar
