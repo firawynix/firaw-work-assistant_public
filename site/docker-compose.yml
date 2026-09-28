@@ -1,0 +1,21 @@
+services:
+  site:
+    image: nginx:alpine
+    container_name: firaw-work-site
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:26015:80"
+    volumes:
+      - ./public:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  default:
+    external: true
+    name: firawynix_frontend-net
