@@ -1,6 +1,10 @@
 param([switch]$VerifyOnly)
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
+# Use only the Windows inbox PowerShell modules in the installer process.
+$env:PSModulePath = Join-Path $PSHOME 'Modules'
+$errorLog = Join-Path ([IO.Path]::GetTempPath()) 'FirawWorkAssistant-install-error.txt'
+[IO.File]::WriteAllText($errorLog, '')
 $temp = Join-Path ([IO.Path]::GetTempPath()) ('FirawWorkAssistant-' + [Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $temp | Out-Null
 try {
@@ -31,17 +35,48 @@ try {
     $setup = Join-Path $temp 'setup.exe'
     Save-HttpsFile $uri.AbsoluteUri $setup 300
     if ((Get-Item -LiteralPath $setup).Length -ne [long]$entry.size) { throw 'Tamanho do download não confere.' }
-    if ((Get-FileHash -Algorithm SHA256 -LiteralPath $setup).Hash -ne [string]$entry.sha256) { throw 'SHA-256 do instalador não confere.' }
+    $sha = [Security.Cryptography.SHA256]::Create()
+    $stream = [IO.File]::OpenRead($setup)
+    try { $actualHash = [BitConverter]::ToString($sha.ComputeHash($stream)).Replace('-', '') }
+    finally { $stream.Dispose(); $sha.Dispose() }
+    if ($actualHash -ne [string]$entry.sha256) { throw 'SHA-256 do instalador não confere.' }
     $signature = Get-AuthenticodeSignature -LiteralPath $setup
     if ($signature.SignerCertificate.Thumbprint -ne '668BEF56480FCA8EB1B0BC3B102A6A9CEC554CC4' -or $signature.Status -notin @('Valid', 'NotTrusted')) {
         throw 'Assinatura Firawynix do instalador não confere.'
     }
     if ($VerifyOnly) { Write-Output "Pacote $arch verificado."; exit 0 }
-    $process = Start-Process -FilePath $setup -ArgumentList '/S' -WindowStyle Hidden -Wait -PassThru
+    $installDir = [Environment]::GetEnvironmentVariable('FIRAW_WORK_INSTALL_DIR')
+    if ([string]::IsNullOrWhiteSpace($installDir) -or $installDir -notmatch '^[a-zA-Z]:\\' -or $installDir -match '["\r\n]') {
+        throw 'A pasta de instalação recebida é inválida.'
+    }
+    $installDir = [IO.Path]::GetFullPath($installDir)
+    $process = Start-Process -FilePath $setup -ArgumentList "/S /D=$installDir" -WindowStyle Hidden -Wait -PassThru
     if ($process.ExitCode -notin @(0, 3010)) { throw "Instalação terminou com erro $($process.ExitCode)." }
+    $app = Join-Path $installDir 'Firaw.WorkAssistant.exe'
+    if (-not (Test-Path -LiteralPath $app -PathType Leaf)) { throw 'O instalador terminou sem colocar o aplicativo na pasta escolhida.' }
+    $registry = Get-ItemProperty -LiteralPath 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\FirawWorkAssistant' -ErrorAction Stop
+    if ([IO.Path]::GetFullPath($registry.InstallLocation) -ne $installDir) { throw 'A instalação não registrou a pasta escolhida pelo Firaw Center.' }
+
+    # Desktop may be redirected to OneDrive. Repair links after silent installs.
+    $shell = New-Object -ComObject WScript.Shell
+    $links = @(
+        (Join-Path ([Environment]::GetFolderPath('DesktopDirectory')) 'Firaw Work Assistant.lnk'),
+        (Join-Path ([Environment]::GetFolderPath('Programs')) 'Firaw\Work Assistant.lnk')
+    )
+    foreach ($link in $links) {
+        if (-not (Test-Path -LiteralPath $link)) {
+            [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($link)) | Out-Null
+            $shortcut = $shell.CreateShortcut($link)
+            $shortcut.TargetPath = $app
+            $shortcut.WorkingDirectory = $installDir
+            $shortcut.IconLocation = "$app,0"
+            $shortcut.Save()
+        }
+        if (-not (Test-Path -LiteralPath $link -PathType Leaf)) { throw "Não foi possível criar o atalho: $link" }
+    }
     exit 0
 } catch {
-    [IO.File]::WriteAllText((Join-Path ([IO.Path]::GetTempPath()) 'FirawWorkAssistant-install-error.txt'), $_.Exception.Message)
+    [IO.File]::WriteAllText($errorLog, $_.Exception.Message)
     exit 1
 } finally {
     $tempRoot = [IO.Path]::GetFullPath([IO.Path]::GetTempPath())

@@ -6,7 +6,7 @@ Unicode true
   !error "Defina ARCH como x64 ou x86"
 !endif
 !ifndef VERSION
-  !define VERSION "0.1.0"
+  !define VERSION "0.1.1"
 !endif
 Name "Firaw Work Assistant"
 OutFile "..\release\Firaw-Work-Assistant-${VERSION}-${ARCH}-Setup.exe"
@@ -24,7 +24,7 @@ Icon "..\assets\huginn-muninn.ico"
 !insertmacro MUI_UNPAGE_CONFIRM
 !insertmacro MUI_UNPAGE_INSTFILES
 !insertmacro MUI_LANGUAGE "PortugueseBR"
-VIProductVersion "0.1.0.0"
+VIProductVersion "0.1.1.0"
 VIAddVersionKey /LANG=1046 "ProductName" "Firaw Work Assistant"
 VIAddVersionKey /LANG=1046 "CompanyName" "Firawynix"
 VIAddVersionKey /LANG=1046 "FileDescription" "Assistente de trabalho"
@@ -41,6 +41,7 @@ FunctionEnd
 
 Section "Aplicativo" Core
   SectionIn RO
+  SetShellVarContext current
   SetOutPath "$INSTDIR"
   File "..\release\app-${ARCH}\Firaw.WorkAssistant.exe"
   WriteUninstaller "$INSTDIR\Uninstall.exe"
@@ -57,7 +58,7 @@ Section "Aplicativo" Core
   WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\FirawWorkAssistant" "NoRepair" 1
 SectionEnd
 
-Section "Desinstalar"
+Section "Uninstall"
   Delete "$INSTDIR\Firaw.WorkAssistant.exe"
   Delete "$INSTDIR\Uninstall.exe"
   RMDir "$INSTDIR"

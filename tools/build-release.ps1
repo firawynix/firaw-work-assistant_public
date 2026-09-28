@@ -2,7 +2,7 @@ param([switch]$Sign)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
-$version = '0.1.0'
+$version = '0.1.1'
 $makensis = Join-Path $env:LOCALAPPDATA 'tauri\NSIS\makensis.exe'
 if (-not (Test-Path -LiteralPath $makensis)) { throw 'NSIS não encontrado.' }
 New-Item -ItemType Directory -Force release,site\public\downloads | Out-Null
@@ -30,13 +30,14 @@ foreach ($arch in @('x64', 'x86')) {
         signerThumbprint = (Get-AuthenticodeSignature -LiteralPath $file).SignerCertificate.Thumbprint
     }
 }
-foreach ($file in Get-ChildItem release -Filter '*.exe' -File) {
-    Copy-Item -LiteralPath $file.FullName -Destination (Join-Path $root 'site\public\downloads') -Force
+foreach ($name in @('Firaw-Work-Assistant-Instalador-Online.exe', "Firaw-Work-Assistant-$version-x64-Setup.exe", "Firaw-Work-Assistant-$version-x86-Setup.exe")) {
+    Copy-Item -LiteralPath (Join-Path $root "release\$name") -Destination (Join-Path $root 'site\public\downloads') -Force
 }
 $json = $manifest | ConvertTo-Json -Depth 5
 [IO.File]::WriteAllText((Join-Path $root 'site\public\downloads\release.json'), $json, (New-Object Text.UTF8Encoding $false))
-$checks = Get-ChildItem site\public\downloads -File | ForEach-Object {
-    '{0}  {1}' -f (Get-FileHash -Algorithm SHA256 -LiteralPath $_.FullName).Hash.ToLowerInvariant(), $_.Name
+$checks = @('Firaw-Work-Assistant-Instalador-Online.exe', "Firaw-Work-Assistant-$version-x64-Setup.exe", "Firaw-Work-Assistant-$version-x86-Setup.exe", 'release.json') | ForEach-Object {
+    $file = Join-Path $root "site\public\downloads\$_"
+    '{0}  {1}' -f (Get-FileHash -Algorithm SHA256 -LiteralPath $file).Hash.ToLowerInvariant(), $_
 }
 [IO.File]::WriteAllLines((Join-Path $root 'site\public\downloads\SHA256SUMS.txt'), $checks)
 Write-Output $json
