@@ -1,0 +1,8 @@
+.store-button{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:15px 18px;border:1px solid #398a9a;border-radius:11px;background:linear-gradient(135deg,#193849,#112635);color:#eafaff;font-weight:700;font-size:14px;white-space:nowrap;transition:transform .2s,border-color .2s,box-shadow .2s}
+.store-button:hover{transform:translateY(-2px);border-color:var(--cyan);box-shadow:0 8px 30px #11c6db2e}
+.store-button>span:last-child{margin-left:auto;color:var(--cyan)}
+.store-mark{display:inline-block;flex:none;width:16px;height:16px;background:linear-gradient(#f25022 0 0) 0 0/7px 7px no-repeat,linear-gradient(#7fba00 0 0) 9px 0/7px 7px no-repeat,linear-gradient(#00a4ef 0 0) 0 9px/7px 7px no-repeat,linear-gradient(#ffb900 0 0) 9px 9px/7px 7px no-repeat}
+.download-panel .store-button{width:100%;margin-top:12px}
+.bottom-bar nav .store-link{color:#c8f7fa;border:1px solid #337888;border-radius:9px;padding:10px 14px;background:#12303e}
+@media(max-width:1050px){.hero-actions .store-button{order:2}.hero-actions .ghost-button{order:3}}
+@media(max-width:680px){.hero-actions .store-button{font-size:12px;padding:12px 14px}.bottom-bar nav .store-link{padding:7px 9px}.bottom-bar nav{flex-wrap:wrap;justify-content:flex-end}}
