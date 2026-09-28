@@ -1,12 +1,26 @@
 param([switch]$VerifyOnly)
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 $temp = Join-Path ([IO.Path]::GetTempPath()) ('FirawWorkAssistant-' + [Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $temp | Out-Null
 try {
+    # NSIS runs Windows PowerShell 5.1; use the Windows HTTPS client instead of
+    # .NET Framework's TLS negotiation, including from a 32-bit installer.
+    $systemDirectory = if ([Environment]::Is64BitOperatingSystem -and -not [Environment]::Is64BitProcess) { 'Sysnative' } else { 'System32' }
+    $curl = Join-Path $env:WINDIR "$systemDirectory\curl.exe"
+    if (-not (Test-Path -LiteralPath $curl)) { throw 'O cliente HTTPS do Windows não foi encontrado. Atualize o Windows e tente novamente.' }
+    function Save-HttpsFile([string]$Url, [string]$Destination, [int]$Timeout) {
+        $errorFile = Join-Path $temp 'download-error.txt'
+        & $curl --fail --silent --show-error --proto '=https' --tlsv1.2 --connect-timeout 30 --max-time $Timeout --stderr $errorFile --output $Destination $Url
+        if ($LASTEXITCODE -ne 0) {
+            $detail = if (Test-Path -LiteralPath $errorFile) { [IO.File]::ReadAllText($errorFile).Trim() } else { '' }
+            throw "Não foi possível baixar o instalador. $detail"
+        }
+    }
     $origin = 'https://jogos.firawynix.com.br/api/games/firaw-work-assistant/windows'
-    $manifest = Invoke-RestMethod -Uri "$origin/atualizacao.json" -TimeoutSec 30
+    $manifestFile = Join-Path $temp 'atualizacao.json'
+    Save-HttpsFile "$origin/atualizacao.json" $manifestFile 30
+    $manifest = [IO.File]::ReadAllText($manifestFile) | ConvertFrom-Json
     $arch = if ([Environment]::Is64BitOperatingSystem) { 'x64' } else { 'x86' }
     $entry = $manifest.architectures.$arch
     if (-not $entry) { throw "Pacote $arch não encontrado no manifesto." }
@@ -15,7 +29,7 @@ try {
         throw 'Endereço do pacote inválido.'
     }
     $setup = Join-Path $temp 'setup.exe'
-    Invoke-WebRequest -UseBasicParsing -Uri $uri.AbsoluteUri -OutFile $setup -TimeoutSec 300
+    Save-HttpsFile $uri.AbsoluteUri $setup 300
     if ((Get-Item -LiteralPath $setup).Length -ne [long]$entry.size) { throw 'Tamanho do download não confere.' }
     if ((Get-FileHash -Algorithm SHA256 -LiteralPath $setup).Hash -ne [string]$entry.sha256) { throw 'SHA-256 do instalador não confere.' }
     $signature = Get-AuthenticodeSignature -LiteralPath $setup
