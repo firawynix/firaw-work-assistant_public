@@ -24,7 +24,7 @@ foreach ($arch in @('x64', 'x86')) {
     $name = "Firaw-Work-Assistant-$version-$arch-Setup.exe"
     $file = Join-Path $root "release\$name"
     $manifest[$arch] = [ordered]@{
-        url = "https://work.firawynix.com.br/downloads/$name"
+        url = "https://jogos.firawynix.com.br/api/games/firaw-work-assistant/windows/$arch/arquivo"
         size = (Get-Item -LiteralPath $file).Length
         sha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $file).Hash.ToLowerInvariant()
         signerThumbprint = (Get-AuthenticodeSignature -LiteralPath $file).SignerCertificate.Thumbprint

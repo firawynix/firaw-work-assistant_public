@@ -13,6 +13,7 @@ tests/preview-*/
 tests/*.png
 tests/*.txt
 tests/*.json
+tests/*.exe
 demo-*.png
 *.pfx
 *.p12
