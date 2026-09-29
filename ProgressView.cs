@@ -6,11 +6,19 @@ namespace Firaw.WorkAssistant;
 internal sealed class ProgressView : Control
 {
     private int _percent;
+    private Color? _accentColor;
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public int Percent
     {
         get => _percent;
         set { _percent = Math.Clamp(value, 0, 100); Invalidate(); }
+    }
+
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public Color? AccentColor
+    {
+        get => _accentColor;
+        set { _accentColor = value; Invalidate(); }
     }
 
     public ProgressView()
@@ -28,7 +36,7 @@ internal sealed class ProgressView : Control
         e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
         var bar = new Rectangle(0, Height - 10, Math.Max(1, Width - 52), 8);
         using var track = new SolidBrush(Theme.Field);
-        var accent = Theme.ProgressAccent(_percent);
+        var accent = _accentColor ?? Theme.ProgressAccent(_percent);
         using var fill = new LinearGradientBrush(bar, accent, ControlPaint.Light(accent, 0.25f), LinearGradientMode.Horizontal);
         e.Graphics.FillRoundedRectangle(track, bar, 4);
         if (_percent > 0)

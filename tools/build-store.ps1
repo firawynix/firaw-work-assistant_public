@@ -1,6 +1,6 @@
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
-$version = '0.1.2'
+$version = '0.1.3'
 $sdk = Get-ChildItem 'C:\Program Files (x86)\Windows Kits\10\bin' -Filter makeappx.exe -Recurse -File |
     Where-Object FullName -Match '\\x64\\' | Sort-Object FullName -Descending |
     Select-Object -First 1 -ExpandProperty FullName

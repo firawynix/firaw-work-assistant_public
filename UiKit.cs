@@ -11,6 +11,9 @@ internal sealed class SurfaceCard : Panel
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public bool Highlight { get; set; }
 
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public Color HighlightColor { get; set; } = Theme.Cyan;
+
     public SurfaceCard()
     {
         DoubleBuffered = true;
@@ -33,11 +36,11 @@ internal sealed class SurfaceCard : Panel
         if (Width < 8 || Height < 8) return;
         e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
         using var border = Rounded(new Rectangle(1, 1, Width - 3, Height - 3), 14);
-        using var pen = new Pen(Highlight ? Theme.CyanDark : Stroke, 1.2f);
+        using var pen = new Pen(Highlight ? Color.FromArgb(145, HighlightColor) : Stroke, 1.2f);
         e.Graphics.DrawPath(pen, border);
         if (Highlight)
         {
-            using var accent = new Pen(Theme.Cyan, 2);
+            using var accent = new Pen(HighlightColor, 2);
             e.Graphics.DrawLine(accent, 20, 1, Math.Min(100, Width - 20), 1);
         }
     }

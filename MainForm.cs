@@ -31,6 +31,7 @@ internal sealed class MainForm : Form
     private readonly Label _adjustmentHint = new() { Dock = DockStyle.Fill, ForeColor = Theme.Muted,
         Font = new Font("Segoe UI", 8.5f), TextAlign = ContentAlignment.MiddleLeft };
     private readonly NeonComboField _repeat = new() { Dock = DockStyle.Fill };
+    private readonly NeonComboField _colorMode = new() { Dock = DockStyle.Fill };
     private readonly GlowCheckBox _stickerToggle = new() { Text = "Fixar sticker na tela" };
     private readonly GlowCheckBox _assistantToggle = new() { Text = "Assistente na tela" };
     private readonly ProgressView _progress = new() { Dock = DockStyle.Fill };
@@ -96,6 +97,16 @@ internal sealed class MainForm : Form
         _filter.SelectedIndex = 0;
         _repeat.Items.AddRange(["Nenhuma", "Diariamente", "Semanalmente"]);
         _repeat.SelectedIndex = 0;
+        _colorMode.Items.AddRange(["Prazo", "% concluído"]);
+        _colorMode.SelectedIndex = 0;
+        _colorMode.SelectedIndexChanged += (_, _) =>
+        {
+            if (_loading || _selected is null) return;
+            _selected.ColorMode = _colorMode.SelectedIndex == 1 ? "Progresso" : "Prazo";
+            _store.Save();
+            RefreshTaskColors();
+            UpdateAssistant();
+        };
         _adjustment.Items.AddRange(["Nenhum", "Postergado", "Reduzido"]);
         _adjustment.SelectedIndex = 0;
         _adjustment.SelectedIndexChanged += (_, _) => UpdateAdjustmentEditor();
@@ -406,9 +417,10 @@ internal sealed class MainForm : Form
     private SurfaceCard BuildChecklistCard()
     {
         var card = new SurfaceCard { Dock = DockStyle.Fill, Margin = new Padding(8, 0, 0, 0), Padding = new Padding(17, 11, 17, 15) };
-        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 4, BackColor = Theme.Panel };
+        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 5, BackColor = Theme.Panel };
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 37));
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 51));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 58));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
         var heading = new Panel { Dock = DockStyle.Fill, BackColor = Theme.Panel, Margin = Padding.Empty };
@@ -424,7 +436,8 @@ internal sealed class MainForm : Form
         PositionBadge();
         layout.Controls.Add(heading, 0, 0);
         layout.Controls.Add(_progress, 0, 1);
-        layout.Controls.Add(WrapField(_checklist, 7), 0, 2);
+        layout.Controls.Add(FieldBlock("COR POR TAREFA / ASSISTENTE E AVISOS", _colorMode), 0, 2);
+        layout.Controls.Add(WrapField(_checklist, 7), 0, 3);
         var add = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1, BackColor = Theme.Panel, Margin = new Padding(0, 6, 0, 0) };
         add.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         add.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 98));
@@ -442,7 +455,7 @@ internal sealed class MainForm : Form
         remove.Height = 35;
         remove.SubtleStyle = true;
         add.Controls.Add(remove, 2, 0);
-        layout.Controls.Add(add, 0, 3);
+        layout.Controls.Add(add, 0, 4);
         card.Controls.Add(layout);
         return card;
     }
@@ -762,12 +775,12 @@ internal sealed class MainForm : Form
         using var clear = new SolidBrush(Theme.Panel);
         e.Graphics.FillRectangle(clear, e.Bounds);
         var cardRect = new Rectangle(e.Bounds.X + 2, e.Bounds.Y + 4, e.Bounds.Width - 8, e.Bounds.Height - 10);
+        var accentColor = note is not null ? Theme.Cyan : Theme.TaskAccent(item!, DateTime.Now);
         using var card = SurfaceCard.Rounded(cardRect, 10);
         using var bg = new SolidBrush(selected ? Color.FromArgb(18, 49, 63) : Color.FromArgb(15, 29, 43));
-        using var border = new Pen(selected ? Theme.CyanDark : Theme.Border, selected ? 1.4f : 1);
+        using var border = new Pen(selected ? Color.FromArgb(145, accentColor) : Theme.Border, selected ? 1.4f : 1);
         e.Graphics.FillPath(bg, card);
         e.Graphics.DrawPath(border, card);
-        var accentColor = note is not null ? Theme.Cyan : item!.Done ? Color.FromArgb(52, 211, 153) : Theme.ProgressAccent(item.Progress);
         using var accent = new SolidBrush(accentColor);
         e.Graphics.FillEllipse(accent, cardRect.X + 13, cardRect.Y + 14, 7, 7);
         var title = note?.Title ?? item!.Title;
@@ -844,7 +857,7 @@ internal sealed class MainForm : Form
         _detailHeadline.Text = item?.Title ?? "Selecione ou crie uma tarefa";
         var now = DateTime.Now;
         _detailBadge.Text = item is null ? "PRONTO PARA COMEÇAR" : item.Done ? "✓ CONCLUÍDA" : item.EffectiveDueAt < now ? "● ATRASADA" : item.IsActive(now) ? "● EM ANDAMENTO" : "○ PROGRAMADA";
-        _detailBadge.ForeColor = item is not null && item.EffectiveDueAt < now && !item.Done ? Color.FromArgb(251, 191, 36) : Theme.Cyan;
+        _detailBadge.ForeColor = item is null ? Theme.Cyan : Theme.TaskAccent(item, now);
         _title.Text = item?.Title ?? "";
         _project.Text = item?.Project ?? "";
         if (_folderButton is not null)
@@ -859,9 +872,12 @@ internal sealed class MainForm : Form
         _adjustedDue.Value = item?.AdjustedDueAt ?? _due.Value;
         UpdateAdjustmentEditor();
         _repeat.SelectedItem = item?.Repeat is "Diariamente" or "Semanalmente" ? item.Repeat : "Nenhuma";
+        _colorMode.Enabled = item is not null;
+        _colorMode.SelectedItem = item?.ColorMode == "Progresso" ? "% concluído" : "Prazo";
         _stickerToggle.Checked = item?.ShowSticker ?? false;
         _notes.Text = TextLines.ForEditor(item?.Notes);
         _progress.Percent = item?.Progress ?? 0;
+        _progress.AccentColor = item is null ? null : Theme.TaskAccent(item, now);
         _checklist.Items.Clear();
         if (item is not null)
             foreach (var step in item.Checklist) _checklist.Items.Add(step.Text, step.Done);
@@ -903,6 +919,7 @@ internal sealed class MainForm : Form
         _selected.DueAt = originalDue;
         _selected.TrySetAdjustment(adjustment, adjustedDue);
         _selected.Repeat = _repeat.SelectedItem?.ToString() ?? "Nenhuma";
+        _selected.ColorMode = _colorMode.SelectedIndex == 1 ? "Progresso" : "Prazo";
         _selected.Notes = _notes.Text.Trim();
         _store.Save();
         return true;
@@ -944,6 +961,7 @@ internal sealed class MainForm : Form
         _store.Save();
         _checklist.Items.Add(_newCheck.Text.Trim(), false);
         _progress.Percent = _selected.Progress;
+        RefreshTaskColors();
         SyncStickers();
         _items.Invalidate();
         UpdateAssistant();
@@ -960,6 +978,7 @@ internal sealed class MainForm : Form
         {
             _store.Save();
             if (_selected?.Id == item.Id) _progress.Percent = item.Progress;
+            RefreshTaskColors();
             SyncStickers();
             UpdateAssistant();
         });
@@ -973,6 +992,7 @@ internal sealed class MainForm : Form
         _checklist.Items.RemoveAt(index);
         _store.Save();
         _progress.Percent = _selected.Progress;
+        RefreshTaskColors();
         SyncStickers();
         _items.Invalidate();
         UpdateAssistant();
@@ -1071,6 +1091,7 @@ internal sealed class MainForm : Form
 
     private void CheckDue()
     {
+        RefreshTaskColors();
         UpdateAssistant();
         var room = Math.Max(0, 3 - _openAlerts.Count);
         foreach (var item in _store.Items.Where(x => !x.Done && x.EffectiveDueAt <= DateTime.Now && !_openAlerts.Contains(x.Id)).OrderBy(x => x.EffectiveDueAt).Take(room).ToList())
@@ -1087,6 +1108,20 @@ internal sealed class MainForm : Form
             alert.FormClosed += (_, _) => _openAlerts.Remove(item.Id);
             alert.Show();
         }
+    }
+
+    private void RefreshTaskColors()
+    {
+        _items.Invalidate();
+        var now = DateTime.Now;
+        _progress.AccentColor = _selected is null ? null : Theme.TaskAccent(_selected, now);
+        if (_selected is not null)
+        {
+            _detailBadge.Text = _selected.Done ? "✓ CONCLUÍDA" : _selected.EffectiveDueAt < now
+                ? "● ATRASADA" : _selected.IsActive(now) ? "● EM ANDAMENTO" : "○ PROGRAMADA";
+            _detailBadge.ForeColor = Theme.TaskAccent(_selected, now);
+        }
+        foreach (var sticker in _stickers.Values.Where(form => !form.IsDisposed)) sticker.RefreshAccent();
     }
 
     private void SyncStickers()
@@ -1117,6 +1152,7 @@ internal sealed class MainForm : Form
                         if (!_notes.Focused) _notes.Text = TextLines.ForEditor(item.Notes);
                         _stickerToggle.Checked = item.ShowSticker;
                         _progress.Percent = item.Progress;
+                        RefreshTaskColors();
                         for (var index = 0; index < Math.Min(_checklist.Items.Count, item.Checklist.Count); index++)
                             _checklist.SetItemChecked(index, item.Checklist[index].Done);
                         _loading = false;

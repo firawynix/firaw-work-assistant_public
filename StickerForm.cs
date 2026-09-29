@@ -8,6 +8,9 @@ internal sealed class StickerForm : Form
     private readonly Action _onChanged;
     private readonly CheckedListBox _steps = new() { BorderStyle = BorderStyle.None, CheckOnClick = true, Dock = DockStyle.Fill, IntegralHeight = false };
     private readonly ProgressView _progress = new() { Dock = DockStyle.Fill };
+    private readonly SurfaceCard _frame = new() { Dock = DockStyle.Fill, Padding = new Padding(2), Highlight = true };
+    private readonly Label _brand = new() { Text = "FIRAW  /  TAREFA", Dock = DockStyle.Fill, ForeColor = Theme.Cyan,
+        Font = new Font("Segoe UI Semibold", 9), TextAlign = ContentAlignment.MiddleLeft };
     private readonly Label _title = new() { Dock = DockStyle.Fill, AutoEllipsis = true, Font = new Font("Segoe UI Semibold", 18), TextAlign = ContentAlignment.MiddleLeft };
     private readonly Label _dates = new() { Dock = DockStyle.Fill, ForeColor = Theme.Muted,
         Font = new Font("Segoe UI", 9), TextAlign = ContentAlignment.MiddleLeft, AutoEllipsis = true };
@@ -89,9 +92,8 @@ internal sealed class StickerForm : Form
         _layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 127));
         _layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         _layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 0));
-        var frame = new SurfaceCard { Dock = DockStyle.Fill, Padding = new Padding(2), Highlight = true };
-        frame.Controls.Add(_layout);
-        Controls.Add(frame);
+        _frame.Controls.Add(_layout);
+        Controls.Add(_frame);
         _resizeGrip.Location = new Point(Width - 27, Height - 27);
         Controls.Add(_resizeGrip);
         _resizeGrip.BringToFront();
@@ -104,8 +106,7 @@ internal sealed class StickerForm : Form
         header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 42));
         header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 42));
         header.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        var brand = new Label { Text = "FIRAW  /  TAREFA", Dock = DockStyle.Fill, ForeColor = Theme.Cyan, Font = new Font("Segoe UI Semibold", 9), TextAlign = ContentAlignment.MiddleLeft };
-        header.Controls.Add(brand, 0, 0);
+        header.Controls.Add(_brand, 0, 0);
         header.Controls.Add(_checkButton, 1, 0);
         header.Controls.Add(_textButton, 2, 0);
         header.Controls.Add(_opacityButton, 3, 0);
@@ -119,9 +120,9 @@ internal sealed class StickerForm : Form
         header.MouseDown += StartDrag;
         header.MouseMove += Drag;
         header.MouseUp += EndDrag;
-        brand.MouseDown += StartDrag;
-        brand.MouseMove += Drag;
-        brand.MouseUp += EndDrag;
+        _brand.MouseDown += StartDrag;
+        _brand.MouseMove += Drag;
+        _brand.MouseUp += EndDrag;
         _layout.Controls.Add(header, 0, 0);
         _layout.Controls.Add(_title, 0, 1);
         _layout.Controls.Add(_progress, 0, 2);
@@ -243,7 +244,7 @@ internal sealed class StickerForm : Form
     {
         if (_loading || e.Index >= _item.Checklist.Count) return;
         _item.Checklist[e.Index].Done = e.NewValue == CheckState.Checked;
-        BeginInvoke(() => { _progress.Percent = _item.Progress; UpdateStepsStatus(); _onChanged(); });
+        BeginInvoke(() => { _progress.Percent = _item.Progress; RefreshAccent(); UpdateStepsStatus(); _onChanged(); });
     }
 
     public void RefreshItem()
@@ -254,6 +255,7 @@ internal sealed class StickerForm : Form
             ? $"Início {_item.StartAt:dd/MM HH:mm}  •  original {_item.DueAt:dd/MM HH:mm}\n{_item.AdjustmentKind}: {adjusted:dd/MM HH:mm}  •  {_item.Project}"
             : $"Início {_item.StartAt:dd/MM HH:mm}  →  final {_item.DueAt:dd/MM HH:mm}  •  {_item.Project}";
         _progress.Percent = _item.Progress;
+        RefreshAccent();
         if (!_noteText.Focused) _noteText.Text = TextLines.ForEditor(_item.Notes);
         _steps.Items.Clear();
         foreach (var step in _item.Checklist) _steps.Items.Add(step.Text, step.Done);
@@ -266,6 +268,15 @@ internal sealed class StickerForm : Form
     }
 
     private void UpdateStepsStatus() => _stepsStatus.Text = $"{_item.Checklist.Count(step => step.Done)} de {_item.Checklist.Count} etapas";
+
+    public void RefreshAccent()
+    {
+        var accent = Theme.TaskAccent(_item, DateTime.Now);
+        _progress.AccentColor = accent;
+        _frame.HighlightColor = accent;
+        _frame.Invalidate();
+        _brand.ForeColor = accent;
+    }
 
     private void StartDrag(object? sender, MouseEventArgs e)
     {

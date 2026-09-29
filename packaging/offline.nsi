@@ -6,7 +6,7 @@ Unicode true
   !error "Defina ARCH como x64 ou x86"
 !endif
 !ifndef VERSION
-  !define VERSION "0.1.2"
+  !define VERSION "0.1.3"
 !endif
 Name "Firaw Work Assistant"
 OutFile "..\release\Firaw-Work-Assistant-${VERSION}-${ARCH}-Setup.exe"
@@ -24,7 +24,7 @@ Icon "..\assets\huginn-muninn.ico"
 !insertmacro MUI_UNPAGE_CONFIRM
 !insertmacro MUI_UNPAGE_INSTFILES
 !insertmacro MUI_LANGUAGE "PortugueseBR"
-VIProductVersion "0.1.2.0"
+VIProductVersion "${VERSION}.0"
 VIAddVersionKey /LANG=1046 "ProductName" "Firaw Work Assistant"
 VIAddVersionKey /LANG=1046 "CompanyName" "Firawynix"
 VIAddVersionKey /LANG=1046 "FileDescription" "Assistente de trabalho"

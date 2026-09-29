@@ -293,8 +293,8 @@ internal sealed class AssistantForm : Form
     private static string ProjectName(WorkItem item) =>
         string.IsNullOrWhiteSpace(item.Project) ? "Geral" : item.Project.Trim();
 
-    private static int MoodIndex(int percent) => percent >= 100 ? 3 : percent >= 67 ? 2 : percent >= 34 ? 1 : 0;
-    private static Color MoodColor(int percent) => Theme.ProgressAccent(percent);
+    private static int MoodIndex(WorkItem item) => item.ColorLevel(DateTime.Now);
+    private static Color MoodColor(WorkItem item) => Theme.TaskAccent(item, DateTime.Now);
 
     public void SetTasks(IEnumerable<WorkItem> tasks, IReadOnlyCollection<string> selectedProjectNames)
     {
@@ -422,7 +422,7 @@ internal sealed class AssistantForm : Form
         var selected = SelectedTask();
         if (selected is not null && _mascotHeight > 0)
         {
-            var mood = MoodIndex(selected.Progress);
+            var mood = MoodIndex(selected);
             var image = _mascots[mood] ?? _mascots[3];
             if (image is not null)
             {
@@ -657,7 +657,7 @@ internal sealed class AssistantForm : Form
             DrawProject(g, visible[column], new Rectangle(8 + column * (_projectWidth + _projectGap),
                 _projectTop, _projectWidth, _projectHeight), heading, small, tiny);
         var selected = SelectedTask() ?? visible[0].Tasks[0];
-        var image = _mascots[MoodIndex(selected.Progress)] ?? _mascots[3];
+        var image = _mascots[MoodIndex(selected)] ?? _mascots[3];
         var mascotTop = _projectTop + _projectHeight + Scale(2);
         var bob = (int)Math.Round(Math.Sin(_frame * 0.16) * 3);
         if (image is not null)
@@ -667,7 +667,7 @@ internal sealed class AssistantForm : Form
         }
         else
         {
-            using var fallback = new SolidBrush(MoodColor(selected.Progress));
+            using var fallback = new SolidBrush(MoodColor(selected));
             g.FillEllipse(fallback, (Width - 80) / 2, mascotTop + 15 + bob, 80, 80);
         }
     }
@@ -677,7 +677,8 @@ internal sealed class AssistantForm : Form
     {
         using var panel = SurfaceCard.Rounded(bounds, Scale(10));
         using var fill = new SolidBrush(Color.FromArgb(15, 28, 40));
-        using var border = new Pen(Theme.CyanDark, 1.1f);
+        var projectColor = Theme.ColorForLevel(project.Tasks.Min(item => item.ColorLevel(DateTime.Now)));
+        using var border = new Pen(Color.FromArgb(145, projectColor), 1.1f);
         g.FillPath(fill, panel);
         g.DrawPath(border, panel);
         var progress = (int)Math.Round(project.Tasks.Average(item => item.Progress));
@@ -686,7 +687,7 @@ internal sealed class AssistantForm : Form
                 bounds.Width - Scale(66), Scale(20)), Theme.Cyan,
             TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
         TextRenderer.DrawText(g, $"{progress}%", tiny,
-            new Rectangle(bounds.Right - Scale(50), bounds.Y + Scale(6), Scale(36), Scale(20)), MoodColor(progress),
+            new Rectangle(bounds.Right - Scale(50), bounds.Y + Scale(6), Scale(36), Scale(20)), projectColor,
             TextFormatFlags.Right | TextFormatFlags.VerticalCenter);
         using (var separator = new Pen(Theme.Border))
             g.DrawLine(separator, bounds.X + Scale(10), bounds.Y + Scale(30),
@@ -717,7 +718,7 @@ internal sealed class AssistantForm : Form
         Font heading, Font small, Font tiny)
     {
         var selected = item.Id == _selectedId;
-        var color = MoodColor(item.Progress);
+        var color = MoodColor(item);
         using var card = SurfaceCard.Rounded(bounds, Scale(8));
         using var fill = new SolidBrush(selected ? Color.FromArgb(24, 47, 62) : Theme.Field);
         using var border = new Pen(selected ? color : Theme.Border, selected ? 1.3f : 1f);

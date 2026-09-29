@@ -2,7 +2,7 @@ param([switch]$Sign)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
-$version = '0.1.2'
+$version = '0.1.3'
 $makensis = Join-Path $env:LOCALAPPDATA 'tauri\NSIS\makensis.exe'
 if (-not (Test-Path -LiteralPath $makensis)) { throw 'NSIS não encontrado.' }
 New-Item -ItemType Directory -Force release,site\public\downloads | Out-Null

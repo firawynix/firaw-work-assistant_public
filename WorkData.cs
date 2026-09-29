@@ -27,6 +27,7 @@ public sealed class WorkItem
     public DateTime? AdjustedDueAt { get; set; }
     public string AdjustmentKind { get; set; } = "Nenhum";
     public string Repeat { get; set; } = "Nenhuma";
+    public string ColorMode { get; set; } = "Prazo";
     public bool Done { get; set; }
     public bool ShowSticker { get; set; }
     public double StickerOpacity { get; set; } = 0.88;
@@ -48,6 +49,18 @@ public sealed class WorkItem
     public bool IsActive(DateTime now) => !Done && StartAt <= now && now <= EffectiveDueAt;
 
     public bool IsOngoing(DateTime now) => !Done && StartAt <= now;
+
+    // 0 = urgente, 1 = atenção, 2 = tranquilo, 3 = ciano/concluído.
+    public int ColorLevel(DateTime now)
+    {
+        if (Done) return 3;
+        if (ColorMode == "Progresso")
+            return Progress >= 100 ? 3 : Progress >= 67 ? 2 : Progress >= 34 ? 1 : 0;
+        var remaining = EffectiveDueAt - now;
+        return remaining <= TimeSpan.FromHours(1) ? 0
+            : remaining <= TimeSpan.FromDays(1) ? 1
+            : remaining <= TimeSpan.FromDays(3) ? 2 : 3;
+    }
 
     public bool TrySetAdjustment(string kind, DateTime? adjustedDueAt)
     {
@@ -176,6 +189,7 @@ public sealed class WorkStore
             foreach (var item in Items)
             {
                 item.Checklist ??= [];
+                if (item.ColorMode is not ("Prazo" or "Progresso")) item.ColorMode = "Prazo";
                 item.StickerOpacity = Math.Clamp(item.StickerOpacity, 0.55, 1.0);
                 if (item.StartAt > item.DueAt) item.StartAt = item.DueAt.AddHours(-1);
                 if (!item.TrySetAdjustment(item.AdjustmentKind, item.AdjustedDueAt))

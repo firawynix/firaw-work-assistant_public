@@ -25,6 +25,16 @@ internal static class Theme
         : percent >= 34 ? Color.FromArgb(255, 194, 78)
         : Color.FromArgb(255, 107, 118);
 
+    public static Color ColorForLevel(int level) => level switch
+    {
+        0 => Color.FromArgb(255, 107, 118),
+        1 => Color.FromArgb(255, 194, 78),
+        2 => Color.FromArgb(77, 233, 164),
+        _ => Cyan
+    };
+
+    public static Color TaskAccent(WorkItem item, DateTime now) => ColorForLevel(item.ColorLevel(now));
+
     public static void Style(Control control)
     {
         if (control is NeonButton or GlowCheckBox) return;
