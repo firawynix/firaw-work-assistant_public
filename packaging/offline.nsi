@@ -6,7 +6,7 @@ Unicode true
   !error "Defina ARCH como x64 ou x86"
 !endif
 !ifndef VERSION
-  !define VERSION "0.1.3"
+  !define VERSION "0.1.4"
 !endif
 Name "Firaw Work Assistant"
 OutFile "..\release\Firaw-Work-Assistant-${VERSION}-${ARCH}-Setup.exe"

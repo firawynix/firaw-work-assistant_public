@@ -3,6 +3,6 @@
   "identityName": "Firawynix.FirawWorkAssistant",
   "publisher": "CN=1FDE3668-C222-4506-AFE6-E2E425EAECD8",
   "publisherDisplayName": "Firawynix",
-  "version": "0.1.3.0",
+  "version": "0.1.4.0",
   "architectures": ["x64", "x86"]
 }
