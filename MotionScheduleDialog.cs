@@ -23,7 +23,7 @@ internal sealed class MotionScheduleDialog : Form
         MaximizeBox = false;
         MinimizeBox = false;
         TopMost = true;
-        ClientSize = new Size(452, 342);
+        ClientSize = new Size(452, 362);
         _interval.Text = settings.AssistantAutoMotionIntervalMinutes.ToString();
         _minimum.Text = settings.AssistantAutoMotionMinSeconds.ToString();
         _maximum.Text = settings.AssistantAutoMotionMaxSeconds.ToString();
@@ -37,7 +37,7 @@ internal sealed class MotionScheduleDialog : Form
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 37));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 37));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 57));
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 65));
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 65));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
@@ -52,7 +52,7 @@ internal sealed class MotionScheduleDialog : Form
         layout.SetColumnSpan(heading, 2);
         var help = new Label
         {
-            Text = "Salvar só programa. Ctrl esquerdo + clique ativa ou desativa; 0 minutos desliga.",
+            Text = "Salvar só programa. Ctrl esquerdo + clique ativa ou desativa. Para testar no Teams, use 2–3 min; tela bloqueada ou em suspensão não conta.",
             Dock = DockStyle.Fill, ForeColor = Theme.Muted,
             Font = new Font("Segoe UI", 8.8f), TextAlign = ContentAlignment.MiddleLeft
         };

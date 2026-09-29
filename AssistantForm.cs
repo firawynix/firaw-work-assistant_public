@@ -262,9 +262,14 @@ internal sealed class AssistantForm : Form
         var bounds = Screen.FromPoint(_motionOrigin).Bounds;
         var x = _motionOrigin.X + (int)Math.Round(Math.Sin(_motionFrame * 1.35) * 19);
         var y = _motionOrigin.Y + (int)Math.Round(Math.Cos(_motionFrame * 1.1) * 9);
-        _motionLast = new Point(Math.Clamp(x, bounds.Left, bounds.Right - 1),
+        var next = new Point(Math.Clamp(x, bounds.Left, bounds.Right - 1),
             Math.Clamp(y, bounds.Top, bounds.Bottom - 1));
-        Cursor.Position = _motionLast;
+        if (!CursorMotion.MoveTo(next, SystemInformation.VirtualScreen))
+        {
+            StopMotion(false);
+            return;
+        }
+        _motionLast = Cursor.Position;
     }
 
     private void StopMotion(bool restore)
@@ -273,7 +278,7 @@ internal sealed class AssistantForm : Form
         _motion.Stop();
         if (restore && Math.Abs(Cursor.Position.X - _motionLast.X) +
             Math.Abs(Cursor.Position.Y - _motionLast.Y) <= 32)
-            Cursor.Position = _motionOrigin;
+            CursorMotion.MoveTo(_motionOrigin, SystemInformation.VirtualScreen);
     }
 
     private void RefreshSizeMenu()
