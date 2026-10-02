@@ -2,6 +2,10 @@
 
 Aplicativo Windows para lembretes, checklists e avisos sobre a tela. A identidade ciano segue os projetos Firawynix, incluindo FirawMerge e Firaw SnapCopyText.
 
+## Integração com Strigoi
+
+A partir da versão **0.2.0**, o pacote integrado **Firaw Assistente de Trabalho** mantém esta interface para trabalho e inclui o Strigoi Companion Assistant completo. O botão **Jogos** e a entrada da bandeja abrem o Familiar em sua própria janela. O pacote complementar **Strigoi Companion Assistant** mantém a interface de jogos e abre todas as funções do Firaw pelo painel de controles. Os dois ZIPs gratuitos são gerados pelo script `scripts/build-suite.ps1` do repositório Strigoi. Cada aplicativo mantém seus dados locais no diretório que já utilizava.
+
 [Site e apresentação](https://work.firawynix.com.br/) · [Instalador online](https://jogos.firawynix.com.br/api/games/firaw-work-assistant/windows/arquivo) · [Apoiar](https://firawynix.com.br/apoie?de=work-assistant)
 
 ## Recursos

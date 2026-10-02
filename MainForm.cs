@@ -183,6 +183,8 @@ internal sealed class MainForm : Form
             (_, _) => OpenMotionSchedule());
         _tray.ContextMenuStrip.Items.Add("Novo lembrete", null, (_, _) => { BringBack(); AddNew(); });
         _tray.ContextMenuStrip.Items.Add("Nova anotação", null, (_, _) => { BringBack(); AddNote(); });
+        if (GameCompanionBridge.IsAvailable)
+            _tray.ContextMenuStrip.Items.Add("Strigoi · jogos e Familiar", null, (_, _) => GameCompanionBridge.Open());
         _tray.ContextMenuStrip.Items.Add("Sair", null, (_, _) => ExitApp());
         Theme.StyleMenu(_tray.ContextMenuStrip);
         _tray.DoubleClick += (_, _) => BringBack();
@@ -223,8 +225,9 @@ internal sealed class MainForm : Form
         root.Controls.Add(BuildWindowBar(), 0, 0);
 
         var hero = new SurfaceCard { Dock = DockStyle.Fill, Highlight = true, Margin = new Padding(0, 0, 0, 17), Padding = new Padding(25, 16, 22, 16) };
-        var header = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1, BackColor = Theme.Panel };
+        var header = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 4, RowCount = 1, BackColor = Theme.Panel };
         header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, GameCompanionBridge.IsAvailable ? 150 : 0));
         header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 170));
         header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 185));
         var heroText = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 3, BackColor = Theme.Panel };
@@ -235,20 +238,27 @@ internal sealed class MainForm : Form
         heroText.Controls.Add(new Label { Text = "Tudo em foco, sem perder o prazo.", Dock = DockStyle.Fill, Font = new Font("Segoe UI Semibold", 20), ForeColor = Theme.Text, TextAlign = ContentAlignment.MiddleLeft }, 0, 1);
         heroText.Controls.Add(new Label { Text = "Tarefas, anotações e seu assistente diretamente na área de trabalho.", Dock = DockStyle.Fill, Font = new Font("Segoe UI", 10), ForeColor = Theme.Muted, TextAlign = ContentAlignment.MiddleLeft }, 0, 2);
         header.Controls.Add(heroText, 0, 0);
+        if (GameCompanionBridge.IsAvailable)
+        {
+            var gamesButton = Button("↗ Jogos", (_, _) => GameCompanionBridge.Open());
+            gamesButton.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+            gamesButton.Height = 44;
+            header.Controls.Add(gamesButton, 1, 0);
+        }
         var newButton = Button("+ Nova tarefa", (_, _) => AddNew());
         newButton.Name = "newButton";
         newButton.Dock = DockStyle.None;
         newButton.Anchor = AnchorStyles.Left | AnchorStyles.Right;
         newButton.Height = 44;
         newButton.Margin = new Padding(8, 0, 4, 0);
-        header.Controls.Add(newButton, 1, 0);
+        header.Controls.Add(newButton, 2, 0);
         var newNoteButton = Button("+ Nova anotação", (_, _) => AddNote());
         newNoteButton.Name = "newNoteButton";
         newNoteButton.Dock = DockStyle.None;
         newNoteButton.Anchor = AnchorStyles.Left | AnchorStyles.Right;
         newNoteButton.Height = 44;
         newNoteButton.Margin = new Padding(4, 0, 8, 0);
-        header.Controls.Add(newNoteButton, 2, 0);
+        header.Controls.Add(newNoteButton, 3, 0);
         hero.Controls.Add(header);
         root.Controls.Add(hero, 0, 1);
 
